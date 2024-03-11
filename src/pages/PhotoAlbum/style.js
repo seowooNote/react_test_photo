@@ -1,27 +1,28 @@
 import { css } from "@emotion/react";
 
-export const photoLayout = css`
-    position: relative;
+export const layout = css`
+    padding: 0px 10px;
+`;
+
+export const imageCard= css`
+    box-sizing: border-box;
+    margin-bottom: 5px;
+    border: 1px solid #151515;
+    width: 100%;
+    height: 300px;
+    background-color: #151515;
+`;
+
+export const imageBox = css`
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
-    width: 420px;
-    height: 100%;
-    box-sizing: border-box;
-    padding: 20px;
-`;
-
-export const noPhoto = css`
-    position: absolute;
-    top: 50%;
-    margin-top: -21.25px;
     width: 100%;
-    text-align: center;
-    color: white;
-`;
+    height: 250px;
+    background-color: #000000;
+    overflow: hidden;
 
-export const photo = css`
-    width: 100%;
-    margin-bottom: 15px;
+    & > img {
+        height: 100%;
+    }
 `;

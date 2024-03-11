@@ -2,6 +2,7 @@
 import * as S from "./style";
 import WideButton from "../../components/WideButton/WideButton";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 /**
  *  1. 사진 불러오기 버튼을 클릭 후 5개 이상의 이미지를 불러올 수 있어야함.
@@ -23,48 +24,129 @@ import { useEffect, useRef, useState } from "react";
  */
 
 function PhotoRegister() {
-    const uploadFiledId = useRef(0);
-    const profileUrlRef = useRef();
+    const navigate = useNavigate();
+    const fileRef = useRef();
+    const [ laodPhotos, setLoadPhotos ] = useState([]);
+    const [ photoSeq, setPhotoSeq ] = useState([]);
 
-    const changeFileHandle = (e) => {
-        if(window.confirm("이미지를 저장하시겠습니까?")) {
-
-            const loadFiles = Array.from(e.target.files);
-    
-            if(loadFiles.length === 0) {
-                return;
-            }
-    
-            const uploadFiles = loadFiles.map(file => {
+    useEffect(() => {
+        setLoadPhotos(() => laodPhotos.map(
+            (photo) => {
                 return {
-                    id: uploadFiledId.current += 1,
-                    imageUrl : file
+                    ...photo,
+                    seq: photoSeq.includes(photo.id) ? photoSeq.indexOf(photo.id) + 1 : 0
                 }
-            });
-    
-            let promises = [];
-            promises = uploadFiles.map(file => new Promise((resolve) => {
-                const fileReader = new FileReader();
-                fileReader.onload = (e) => {
-                    resolve(e.target.result);
+            }
+        ));
+    }, [photoSeq])
+
+    const handleFileChange = (e) => {
+        const fileList = e.target.files;
+        const fileArray = Array.from(fileList);
+        
+        fileRef.current.value = "";
+
+        if(fileArray.length === 0) {
+            return;
+        }
+
+        const filePromiseArray = fileArray.map(
+            (file) => 
+            new Promise(
+                (resolve) => {
+                    const fileReader = new FileReader();
+
+                    fileReader.onload = (e) => {
+                        resolve(e.target.result);
+                    }
+
+                    fileReader.readAsDataURL(file);
                 }
-                fileReader.readAsDataURL(file.imageUrl);
-            }));
+            )
+        );
 
-            Promise.all(promises).then(resolve => {
-                resolve.map((dataUrl, index) => {
-                    uploadFiles[index].imageUrl = dataUrl;
-                });
+        Promise.all(filePromiseArray).then(
+            (result) => {
+                setLoadPhotos(() => result.map(
+                    (dataUrl, index) => {
+                        return {
+                            id: index + 1,
+                            seq: 0,
+                            dataUrl
+                        }
+                    }
+                ));
+            }
+        );
 
-            }).then(() => localStorage.setItem("photo", JSON.stringify(uploadFiles)));
-        }    
+    }
+
+    const handlePhotoCheck = (id) => {
+        if(photoSeq.includes(id)) {
+            setPhotoSeq(photoSeq => photoSeq.filter(seq => seq !== id));
+        }else {
+            setPhotoSeq(photoSeq => [...photoSeq, id]);
+        }
+    }
+
+    const handleSubmitClick = () => {
+        const isSave = window.confirm("사진을 저장하시겠습니까?");
+        if(!isSave) {
+            return;
+        }
+        const localStorageFiles = !localStorage.getItem("photo") 
+                                    ? [] 
+                                    : JSON.parse(localStorage.getItem("photo"));
+
+        const lastId = localStorageFiles.length === 0 
+                        ? 0 
+                        : localStorageFiles[localStorageFiles.length - 1].id;
+
+        const newPhotos = laodPhotos
+            .filter(photo => photo.seq !== 0)
+            .sort((photoA, photoB) => photoA.seq - photoB.seq)
+            .map(
+                (photo, index) => {
+                    return {
+                        id: lastId + index + 1,
+                        imageUrl: photo.dataUrl
+                    }
+                }
+            );
+        const newFiles = [...localStorageFiles, ...newPhotos];
+        localStorage.setItem("photo", JSON.stringify(newFiles));
+        alert("사진 저장을 완료하였습니다.");
+        navigate("/photo/album");
     }
 
     return (
         <div css={S.layout}>
-            <h1 css={S.title}>사진 등록하기</h1>
-            <input type="file" style={{display: "none"}} multiple={true} ref={profileUrlRef} onChange={changeFileHandle}/>
-            <WideButton text={"사진 불러오기"} onClick={() => profileUrlRef.current.click()}/>
+            <div css={S.header}>
+                <h1 css={S.title}>사진 등록하기</h1>
+                <button css={S.submitButton} onClick={handleSubmitClick}>완료</button>
+            </div>
+            <input 
+                type="file" 
+                style={{display: "none"}} 
+                multiple={true} 
+                ref={fileRef}
+                onChange={handleFileChange}
+            />
+            <div css={S.container}>
+                {
+                    laodPhotos.map(
+                        photo => 
+                            <div key={photo.id}>
+                                <input css={S.checkBox} type="checkbox" id={"img" + photo.id} onChange={() => handlePhotoCheck(photo.id)} />
+                                <label css={S.imageBox} htmlFor={"img" + photo.id}>
+                                    <div>{photo.seq}</div>
+                                    <img src={photo.dataUrl} alt="" />
+                                </label>
+                            </div>
+                    )
+                }
+            </div>
+            <WideButton text={"사진 불러오기"} onClick={() => fileRef.current.click()}/>
         </div>
     );
 }

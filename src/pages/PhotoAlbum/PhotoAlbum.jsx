@@ -1,4 +1,5 @@
 /** @jsxImportSource @emotion/react */
+import { useEffect, useState } from "react";
 import * as S from "./style";
 /**
  *  1. 사진 등록하기를 통해 등록된 이미지들을 각자 자유롭게 디자인하여 불러와야함.
@@ -8,14 +9,25 @@ import * as S from "./style";
  */
 
 function PhotoAlbum() {
-    const getPhotos = JSON.parse(localStorage.getItem("photo"));
+    const [ loadPhotos , setLoadPhotos ] = useState([]);
+    useEffect(() => {
+        const localStorageFiles = !localStorage.getItem("photo")
+                                        ? []
+                                        : JSON.parse(localStorage.getItem("photo"));
+
+        setLoadPhotos(() => localStorageFiles);
+    }, []);
 
     return (
-        <div css={S.photoLayout}>
-            {!getPhotos ? <h1 css={S.noPhoto}>불러올 사진이 없습니다.</h1> : getPhotos.map((photo) => {
-                return <img css={S.photo} src={photo.imageUrl} alt="" key={photo.id} />
+        <div css={S.layout}>
+            {loadPhotos.map((photo) => {
+                return  <div key={photo.id} css={S.imageCard}>
+                            <div css={S.imageBox}>
+                                <img src={photo.imageUrl} alt="" />
+                            </div>
+                        </div>
             })}
-
+            
         </div>
     );
 }

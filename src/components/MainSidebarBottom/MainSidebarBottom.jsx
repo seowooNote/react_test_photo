@@ -10,7 +10,7 @@ function MainSidebarBottom() {
             {
                 SIDEBAR_MENUS.map(
                     menu => 
-                    <MainSidebarMenu path={menu.path} icon={menu.icon} name={menu.name}/>
+                    <MainSidebarMenu key={menu.id} path={menu.path} icon={menu.icon} name={menu.name}/>
                 )
             }
         </ul>
